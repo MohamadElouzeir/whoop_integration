@@ -1,2 +1,2 @@
 [start]
-cmd = "python3 -m http.server ${PORT:-3000}"
+cmd = "nginx -g 'daemon off;'"
