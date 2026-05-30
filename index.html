@@ -38,8 +38,9 @@
       border-bottom: 1px solid var(--border);
     }
     .nav-brand {
-      display: flex; align-items: center; gap: 14px;
-      font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 1rem; font-weight: 700; letter-spacing: -0.02em;
+      flex-shrink: 0;
     }
     .nav-brand .dot { color: var(--taqa-yellow); }
     .badge-api {
@@ -317,10 +318,48 @@
     @media (max-width: 768px) {
       nav { padding: 16px 20px; }
       nav a { display: none; }
+
+      h1 { font-size: 2.2rem; }
+      .hero { padding: 100px 20px 60px; }
+      .hero-sub { font-size: 1rem; }
+      .hero-cta { flex-direction: column; align-items: stretch; text-align: center; }
+      .btn-primary, .btn-ghost { text-align: center; }
+
       .stats { flex-wrap: wrap; }
-      .stat { min-width: 140px; }
+      .stat { min-width: 50%; flex: 1 1 50%; border-right: none; border-bottom: 1px solid var(--border); }
+      .stat:nth-child(odd) { border-right: 1px solid var(--border); }
+      .stat:last-child, .stat:nth-last-child(2):nth-child(odd) { border-bottom: none; }
+
+      section { padding: 60px 16px; }
+
+      .use-grid { grid-template-columns: 1fr; }
+
+      /* Screenshots: on mobile show 1.2 cards at a time so user knows to scroll */
+      .phones-row { gap: 14px; padding-bottom: 16px; }
+      .phone-card { flex: 0 0 72vw; max-width: 280px; }
+
+      .screens-group-label { font-size: 0.68rem; }
+      .screens-intro { flex-direction: column; }
+
+      /* Flow diagram: stack vertically, hide arrows */
+      .flow-diagram { flex-direction: column; gap: 12px; }
+      .flow-arrow { transform: rotate(90deg); padding: 4px 0; }
+      .flow-box { width: 100%; max-width: 320px; }
+
+      .endpoints-grid { grid-template-columns: 1fr; }
+
       .about-grid { gap: 40px; }
-      footer { padding: 24px 20px; flex-direction: column; text-align: center; }
+      .metrics-box { grid-template-columns: 1fr 1fr; padding: 24px; gap: 20px; }
+
+      .cta-section { padding: 60px 16px; }
+
+      footer { padding: 24px 16px; flex-direction: column; text-align: center; }
+    }
+
+    @media (max-width: 400px) {
+      .phone-card { flex: 0 0 85vw; }
+      h1 { font-size: 1.9rem; }
+      .metrics-box { grid-template-columns: 1fr; }
     }
   </style>
 </head>
