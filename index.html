@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Taqa Fitness — WHOOP Integration</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --whoop-green: #00f19f;
+      --taqa-yellow: #d4f200;
+      --dark: #0a0a0a;
+      --dark2: #111111;
+      --dark3: #1a1a1a;
+      --card: #1e1e1e;
+      --border: #2a2a2a;
+      --text: #f0f0f0;
+      --muted: #888;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--dark);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 48px;
+      background: rgba(10,10,10,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-brand {
+      display: flex; align-items: center; gap: 14px;
+      font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em;
+    }
+    .nav-brand .dot { color: var(--taqa-yellow); }
+    .badge-api {
+      background: var(--whoop-green); color: #000;
+      font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em;
+      padding: 3px 8px; border-radius: 4px; text-transform: uppercase;
+    }
+    nav a {
+      color: var(--muted); text-decoration: none; font-size: 0.9rem;
+      transition: color .2s;
+    }
+    nav a:hover { color: var(--text); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: 120px 24px 80px;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,241,159,0.08) 0%, transparent 70%);
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(0,241,159,0.1);
+      border: 1px solid rgba(0,241,159,0.2);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: 0.78rem; font-weight: 600; letter-spacing: 0.06em;
+      color: var(--whoop-green); text-transform: uppercase;
+      margin-bottom: 32px;
+    }
+    .hero-eyebrow span { width: 6px; height: 6px; border-radius: 50%; background: var(--whoop-green); }
+    h1 {
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      max-width: 800px;
+      margin-bottom: 24px;
+    }
+    h1 em { color: var(--whoop-green); font-style: normal; }
+    .hero-sub {
+      font-size: 1.15rem; color: var(--muted);
+      max-width: 540px; margin-bottom: 48px; line-height: 1.7;
+    }
+    .hero-cta {
+      display: flex; gap: 14px; flex-wrap: wrap; justify-content: center;
+    }
+    .btn-primary {
+      background: var(--whoop-green); color: #000;
+      font-weight: 700; font-size: 0.95rem;
+      padding: 14px 32px; border-radius: 8px;
+      text-decoration: none; transition: opacity .2s;
+    }
+    .btn-primary:hover { opacity: 0.88; }
+    .btn-ghost {
+      border: 1px solid var(--border); color: var(--text);
+      font-size: 0.95rem; padding: 14px 32px; border-radius: 8px;
+      text-decoration: none; transition: border-color .2s;
+    }
+    .btn-ghost:hover { border-color: var(--muted); }
+
+    /* ── STATS STRIP ── */
+    .stats {
+      display: flex; justify-content: center; gap: 0;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--dark2);
+    }
+    .stat {
+      flex: 1; max-width: 240px;
+      padding: 36px 24px; text-align: center;
+      border-right: 1px solid var(--border);
+    }
+    .stat:last-child { border-right: none; }
+    .stat-num {
+      font-size: 2rem; font-weight: 800; letter-spacing: -0.03em;
+      color: var(--whoop-green);
+    }
+    .stat-label { font-size: 0.82rem; color: var(--muted); margin-top: 4px; }
+
+    /* ── SECTIONS ── */
+    section { padding: 96px 24px; }
+    .container { max-width: 1100px; margin: 0 auto; }
+
+    .section-label {
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--whoop-green);
+      margin-bottom: 14px;
+    }
+    h2 {
+      font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+      font-weight: 800; letter-spacing: -0.03em;
+      line-height: 1.1; margin-bottom: 20px;
+    }
+    .section-sub {
+      color: var(--muted); font-size: 1.05rem;
+      max-width: 520px; line-height: 1.7; margin-bottom: 56px;
+    }
+
+    /* ── HOW WE USE WHOOP ── */
+    .use-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2px;
+      background: var(--border);
+      border-radius: 16px; overflow: hidden;
+    }
+    .use-card {
+      background: var(--card);
+      padding: 36px 32px;
+    }
+    .use-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: rgba(0,241,159,0.12);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem; margin-bottom: 20px;
+    }
+    .use-card h3 {
+      font-size: 1.05rem; font-weight: 700; margin-bottom: 10px;
+    }
+    .use-card p { font-size: 0.88rem; color: var(--muted); line-height: 1.65; }
+    .use-card .data-tags {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px;
+    }
+    .tag {
+      background: rgba(0,241,159,0.08);
+      border: 1px solid rgba(0,241,159,0.15);
+      color: var(--whoop-green);
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.04em;
+      padding: 4px 10px; border-radius: 4px;
+    }
+
+    /* ── SCREENSHOTS ── */
+    .screens-section { background: var(--dark2); }
+    .screens-intro { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 48px; flex-wrap: wrap; gap: 24px; }
+
+    .screens-group { margin-bottom: 64px; }
+    .screens-group-label {
+      font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 24px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .screens-group-label::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    .phones-row {
+      display: flex; gap: 20px;
+      overflow-x: auto; padding-bottom: 12px;
+      scroll-snap-type: x mandatory;
+    }
+    .phones-row::-webkit-scrollbar { height: 4px; }
+    .phones-row::-webkit-scrollbar-track { background: var(--border); border-radius: 2px; }
+    .phones-row::-webkit-scrollbar-thumb { background: var(--whoop-green); border-radius: 2px; }
+
+    .phone-card {
+      flex: 0 0 220px;
+      scroll-snap-align: start;
+    }
+    .phone-frame {
+      background: var(--dark3);
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+      position: relative;
+      transition: transform .3s, box-shadow .3s;
+    }
+    .phone-frame:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 32px 80px rgba(0,241,159,0.12);
+    }
+    .phone-frame img {
+      width: 100%; display: block;
+    }
+    .phone-caption {
+      margin-top: 14px; font-size: 0.8rem; color: var(--muted);
+      text-align: center; padding: 0 4px;
+    }
+    .phone-caption strong { color: var(--text); display: block; margin-bottom: 2px; font-size: 0.85rem; }
+
+    /* ── DATA FLOW ── */
+    .flow-section { background: var(--dark); }
+    .flow-diagram {
+      display: flex; align-items: center; gap: 0;
+      flex-wrap: wrap; justify-content: center;
+      margin-top: 48px;
+    }
+    .flow-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px 28px; text-align: center;
+      min-width: 160px;
+    }
+    .flow-box .flow-icon { font-size: 1.6rem; margin-bottom: 10px; }
+    .flow-box h4 { font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
+    .flow-box p { font-size: 0.77rem; color: var(--muted); }
+    .flow-arrow {
+      font-size: 1.5rem; color: var(--whoop-green);
+      padding: 0 12px;
+    }
+
+    /* ── API ENDPOINTS ── */
+    .endpoints-section { background: var(--dark2); }
+    .endpoints-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 12px; margin-top: 48px;
+    }
+    .endpoint-item {
+      background: var(--dark3);
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px 24px;
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+    .method {
+      font-size: 0.68rem; font-weight: 800; letter-spacing: 0.05em;
+      padding: 4px 8px; border-radius: 4px; flex-shrink: 0; margin-top: 2px;
+    }
+    .get { background: rgba(0,241,159,0.15); color: var(--whoop-green); }
+    .post { background: rgba(212,242,0,0.15); color: var(--taqa-yellow); }
+    .endpoint-path { font-size: 0.82rem; font-family: 'SF Mono', monospace; color: var(--text); margin-bottom: 4px; }
+    .endpoint-desc { font-size: 0.78rem; color: var(--muted); }
+
+    /* ── ABOUT TAQA ── */
+    .about-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 64px;
+      align-items: center;
+    }
+    @media (max-width: 768px) { .about-grid { grid-template-columns: 1fr; } }
+    .about-points { list-style: none; display: flex; flex-direction: column; gap: 18px; margin-top: 32px; }
+    .about-points li {
+      display: flex; gap: 14px; align-items: flex-start;
+      font-size: 0.9rem; color: var(--muted);
+    }
+    .about-points li::before {
+      content: '✓'; color: var(--whoop-green); font-weight: 800;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .about-points li strong { color: var(--text); }
+    .metrics-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 36px; display: grid;
+      grid-template-columns: 1fr 1fr; gap: 28px;
+    }
+    .metric-item .metric-val {
+      font-size: 1.6rem; font-weight: 800; letter-spacing: -0.03em;
+      color: var(--whoop-green);
+    }
+    .metric-item .metric-lbl { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── CTA ── */
+    .cta-section {
+      text-align: center; padding: 96px 24px;
+      background: radial-gradient(ellipse 70% 80% at 50% 100%, rgba(0,241,159,0.07) 0%, transparent 70%);
+      border-top: 1px solid var(--border);
+    }
+    .cta-section h2 { max-width: 600px; margin: 0 auto 20px; }
+    .cta-section p { color: var(--muted); margin-bottom: 40px; }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 48px;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.8rem; color: var(--muted);
+      flex-wrap: wrap; gap: 12px;
+    }
+    footer a { color: var(--muted); text-decoration: none; }
+    footer a:hover { color: var(--text); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      nav { padding: 16px 20px; }
+      nav a { display: none; }
+      .stats { flex-wrap: wrap; }
+      .stat { min-width: 140px; }
+      .about-grid { gap: 40px; }
+      footer { padding: 24px 20px; flex-direction: column; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-brand">
+    Taqa Fitness <span class="dot">•</span> WHOOP
+    <span class="badge-api">API Integration</span>
+  </div>
+  <div style="display:flex;gap:28px;">
+    <a href="#how">How We Use It</a>
+    <a href="#screenshots">Screenshots</a>
+    <a href="#data">Data Flow</a>
+    <a href="#about">About Taqa</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-eyebrow"><span></span> WHOOP API Integration</div>
+  <h1>WHOOP Powers<br><em>Real Performance</em><br>Intelligence in Taqa</h1>
+  <p class="hero-sub">
+    Taqa Fitness is an AI fitness platform that uses WHOOP's strain, recovery,
+    and sleep data to generate personalized coaching scores for every user — every day.
+  </p>
+  <div class="hero-cta">
+    <a href="#screenshots" class="btn-primary">See It in the App</a>
+    <a href="#about" class="btn-ghost">About Taqa Fitness</a>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat">
+    <div class="stat-num">3</div>
+    <div class="stat-label">WHOOP API endpoints called per user per day (recovery, cycle, sleep)</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">4</div>
+    <div class="stat-label">Fitness scores enriched with WHOOP data</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">7D</div>
+    <div class="stat-label">Rolling trend windows displayed in-app</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">2</div>
+    <div class="stat-label">Coach + user views built on WHOOP data</div>
+  </div>
+</div>
+
+<!-- HOW WE USE WHOOP -->
+<section id="how">
+  <div class="container">
+    <div class="section-label">Integration Depth</div>
+    <h2>Exactly how WHOOP data<br>drives Taqa</h2>
+    <p class="section-sub">
+      Every piece of WHOOP data we consume is surfaced directly to the user
+      and their coach — no black boxes.
+    </p>
+
+    <div class="use-grid">
+      <div class="use-card">
+        <div class="use-icon">📊</div>
+        <h3>TAQA Fitness Score</h3>
+        <p>
+          Our composite daily score (0–100) draws from whichever wearable
+          the user has connected. When WHOOP is connected, recovery and strain
+          are used as inputs. The app labels the data source so users always
+          know where each score comes from.
+        </p>
+        <div class="data-tags">
+          <span class="tag">recovery_score</span>
+          <span class="tag">strain</span>
+          <span class="tag">hrv_rmssd</span>
+          <span class="tag">total_sleep_minutes</span>
+        </div>
+      </div>
+
+      <div class="use-card">
+        <div class="use-icon">💤</div>
+        <h3>Sleep Intelligence</h3>
+        <p>
+          Users track total sleep, time in bed, efficiency, sleep stages
+          (Light / Deep / REM), disturbances, and sleep cycles — all sourced
+          from WHOOP — with weekly, monthly, and yearly trend charts.
+        </p>
+        <div class="data-tags">
+          <span class="tag">total_sleep_min</span>
+          <span class="tag">sleep_stages</span>
+          <span class="tag">efficiency</span>
+          <span class="tag">disturbances</span>
+        </div>
+      </div>
+
+      <div class="use-card">
+        <div class="use-icon">❤️</div>
+        <h3>Recovery Details</h3>
+        <p>
+          A dedicated Recovery screen shows HRV (RMSSD), resting heart rate,
+          SpO₂, skin temperature, and a 7-day recovery trend line — all
+          rendered from WHOOP's daily recovery payload.
+        </p>
+        <div class="data-tags">
+          <span class="tag">hrv_rmssd</span>
+          <span class="tag">resting_hr</span>
+          <span class="tag">spo2</span>
+          <span class="tag">skin_temp_c</span>
+        </div>
+      </div>
+
+      <div class="use-card">
+        <div class="use-icon">⚡</div>
+        <h3>Daily Strain & Cycle</h3>
+        <p>
+          Strain (0–21 scale), average and max heart rate, and total energy
+          expenditure are displayed per day with a 7-day HR trend.
+          Strain feeds our ACWR (acute:chronic workload ratio) engine.
+        </p>
+        <div class="data-tags">
+          <span class="tag">strain</span>
+          <span class="tag">avg_hr</span>
+          <span class="tag">max_hr</span>
+          <span class="tag">energy_kj</span>
+        </div>
+      </div>
+
+      <div class="use-card">
+        <div class="use-icon">🏋️</div>
+        <h3>Coach Analytics View</h3>
+        <p>
+          Coaches see their clients' 7-day WHOOP recovery and strain charts
+          side by side, with connection status and the ability to navigate
+          through historical weeks — enabling data-driven coaching decisions.
+        </p>
+        <div class="data-tags">
+          <span class="tag">7-day recovery</span>
+          <span class="tag">7-day strain</span>
+          <span class="tag">connection status</span>
+        </div>
+      </div>
+
+      <div class="use-card">
+        <div class="use-icon">🔗</div>
+        <h3>User-Initiated OAuth</h3>
+        <p>
+          Users connect WHOOP from the app's Settings screen via a
+          single-tap "Connect Whoop" flow. Only users who explicitly
+          authorize are synced. We never access WHOOP data without consent.
+        </p>
+        <div class="data-tags">
+          <span class="tag">OAuth 2.0</span>
+          <span class="tag">user consent</span>
+          <span class="tag">revocable</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SCREENSHOTS -->
+<section id="screenshots" class="screens-section">
+  <div class="container">
+    <div class="screens-intro">
+      <div>
+        <div class="section-label">Live App Screenshots</div>
+        <h2>WHOOP in Taqa — every screen</h2>
+        <p class="section-sub" style="margin-bottom:0;">
+          All screenshots are from the live production app with real WHOOP data.
+        </p>
+      </div>
+    </div>
+
+    <!-- Group 1: Home & Scores -->
+    <div class="screens-group">
+      <div class="screens-group-label">Home Feed & TAQA Scores — WHOOP as primary data source</div>
+      <div class="phones-row">
+
+        <div class="phone-card">
+          <div class="phone-frame">
+            <img src="imgs/photo_8_2026-05-30_12-55-12.jpg" alt="Home feed with WHOOP score" />
+          </div>
+          <div class="phone-caption">
+            <strong>Home Feed</strong>
+            Daily TAQA Score with WHOOP connected as the data source. Score card shows Sleep, Recovery, Stress & Load subscores.
+          </div>
+        </div>
+
+        <div class="phone-card">
+          <div class="phone-frame">
+            <img src="imgs/photo_3_2026-05-30_12-55-12.jpg" alt="TAQA Fitness Scores screen" />
+          </div>
+          <div class="phone-caption">
+            <strong>TAQA Fitness Scores</strong>
+            Sleep (77) and Recovery (67) scores using WHOOP as the data source for this user — the app shows which device each score comes from.
+          </div>
+        </div>
+
+        <div class="phone-card">
+          <div class="phone-frame">
+            <img src="imgs/photo_1_2026-05-30_12-55-12.jpg" alt="Dashboard with WHOOP widgets" />
+          </div>
+          <div class="phone-caption">
+            <strong>Dashboard Widgets</strong>
+            WHOOP Daily Strain (8.5/21) and WHOOP Recovery (32%) shown as native widgets alongside other trackers.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Group 2: Recovery -->
+    <div class="screens-group">
+      <div class="screens-group-label">Recovery Screen — HRV, Resting HR, SpO₂, Skin Temp</div>
+      <div class="phones-row">
+
+        <div class="phone-card">
+          <div class="phone-frame">
+            <img src="imgs/photo_2_2026-05-30_12-55-12.jpg" alt="Recovery details dark screen" />
+          </div>
+          <div class="phone-caption">
+            <strong>Recovery Details</strong>
+            Score 32 (Low Recovery). RHR 65 bpm · HRV 47.4 ms · SpO₂ 94.4% · Skin Temp 32.8°C with 7-day trend.
+          </div>
+        </div>
+
+        <div class="phone-card">
+          <div class="phone-frame">
+            <img src="imgs/photo_4_2026-05-30_12-55-12.jpg" alt="Daily Cycle dark screen" />
+          </div>
+          <div class="phone-caption">
+            <strong>Daily Cycle</strong>
+            Strain 8.5 · Avg HR 74 bpm · Max HR 133 bpm · Energy 9590 kJ. 7-day avg HR trend chart.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Group 3: Sleep -->
+    <div class="screens-group">
+      <div class="screens-group-label">Sleep Tracking — Weekly / Monthly / Yearly trends + Stage breakdown</div>
+      <div class="phones-row">
+
+        <div class="phone-card">
+          <div class="phone-frame">
+            <img src="imgs/photo_6_2026-05-30_12-55-12.jpg" alt="Sleep metrics screen" />
+          </div>
+          <div class="phone-caption">
+            <strong>Sleep Metrics</strong>
+            Total sleep 5h 59m · Time in bed 6h 31m · Efficiency 92% · Stages: Light 49%, Deep 34%, REM 16%.
+          </div>
+        </div>
+
+        <div class="phone-card">
+          <div class="phone-frame">
+            <img src="imgs/photo_5_2026-05-30_12-55-12.jpg" alt="Sleep weekly trend" />
+          </div>
+          <div class="phone-caption">
+            <strong>Sleep — Weekly Trend</strong>
+            Last 7 days avg 6.2h bar chart. Goal tracking at 7.0h.
+          </div>
+        </div>
+
+        <div class="phone-card">
+          <div class="phone-frame">
+            <img src="imgs/photo_7_2026-05-30_12-55-12.jpg" alt="Sleep monthly trend" />
+          </div>
+          <div class="phone-caption">
+            <strong>Sleep — Monthly Trend</strong>
+            31-day history, avg 6.3h / 188.5h total.
+          </div>
+        </div>
+
+        <div class="phone-card">
+          <div class="phone-frame">
+            <img src="imgs/photo_9_2026-05-30_12-55-12.jpg" alt="Sleep yearly trend" />
+          </div>
+          <div class="phone-caption">
+            <strong>Sleep — Yearly Trend</strong>
+            Annual aggregation, avg 6.5h / 527.9h total.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Group 4: Coach -->
+    <div class="screens-group">
+      <div class="screens-group-label">Coach View — Client's WHOOP data visible to their assigned coach</div>
+      <div class="phones-row">
+
+        <div class="phone-card">
+          <div class="phone-frame">
+            <img src="imgs/photo_10_2026-05-30_12-55-12.jpg" alt="Wearables details coach view" />
+          </div>
+          <div class="phone-caption">
+            <strong>Coach — Wearables Details</strong>
+            7-day WHOOP Recovery & Strain bar charts. "Whoop Connected" badge visible to coach.
+          </div>
+        </div>
+
+        <div class="phone-card">
+          <div class="phone-frame">
+            <img src="imgs/photo_11_2026-05-30_12-55-12.jpg" alt="Client analytics with WHOOP status" />
+          </div>
+          <div class="phone-caption">
+            <strong>Coach — Client Analytics</strong>
+            Wearables section shows Whoop: Connected. Coach sees daily metrics alongside training and diet data.
+          </div>
+        </div>
+
+        <div class="phone-card">
+          <div class="phone-frame">
+            <img src="imgs/Screenshot 2026-05-30 130528.png" alt="Settings connect WHOOP" />
+          </div>
+          <div class="phone-caption">
+            <strong>Settings — Connect WHOOP</strong>
+            User-initiated OAuth flow. "Connect Whoop" and "Connect Fitbit" live under Devices section.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- DATA FLOW -->
+<section id="data" class="flow-section">
+  <div class="container">
+    <div class="section-label">Technical Architecture</div>
+    <h2>How WHOOP data flows<br>through Taqa</h2>
+    <p class="section-sub">
+      WHOOP data is fetched daily per user and normalized into our unified
+      scoring engine alongside Fitbit and Apple HealthKit.
+    </p>
+
+    <div class="flow-diagram">
+      <div class="flow-box">
+        <div class="flow-icon">⌚</div>
+        <h4>WHOOP Device</h4>
+        <p>User wears WHOOP. Data syncs to WHOOP cloud.</p>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">
+        <div class="flow-icon">🔐</div>
+        <h4>WHOOP OAuth</h4>
+        <p>User authorizes Taqa. Token stored securely per user.</p>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">
+        <div class="flow-icon">⚙️</div>
+        <h4>Taqa Backend</h4>
+        <p>Daily sync job fetches & normalizes WHOOP payload per user.</p>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">
+        <div class="flow-icon">🧮</div>
+        <h4>Scoring Engine</h4>
+        <p>Computes Sleep, Recovery, Stress & Training Load scores.</p>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">
+        <div class="flow-icon">📱</div>
+        <h4>User & Coach</h4>
+        <p>Scores, trends, and raw metrics surfaced in app in real time.</p>
+      </div>
+    </div>
+
+    <!-- Endpoints -->
+    <div class="endpoints-section" style="background:none; padding: 56px 0 0;">
+      <div class="section-label" style="margin-top:0;">WHOOP API Endpoints We Use</div>
+      <div class="endpoints-grid">
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <div>
+            <div class="endpoint-path">/v1/cycle</div>
+            <div class="endpoint-desc">Daily strain, avg/max HR, energy expenditure</div>
+          </div>
+        </div>
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <div>
+            <div class="endpoint-path">/v1/recovery</div>
+            <div class="endpoint-desc">Recovery score, HRV RMSSD, resting HR, SpO₂, skin temp</div>
+          </div>
+        </div>
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <div>
+            <div class="endpoint-path">/v1/sleep</div>
+            <div class="endpoint-desc">Total sleep, time in bed, stages (light/deep/REM), efficiency, disturbances</div>
+          </div>
+        </div>
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <div>
+            <div class="endpoint-path">/v1/user/measurement/body</div>
+            <div class="endpoint-desc">Weight used to supplement user profile if not entered manually</div>
+          </div>
+        </div>
+        <div class="endpoint-item">
+          <span class="method post">POST</span>
+          <div>
+            <div class="endpoint-path">/oauth2/token</div>
+            <div class="endpoint-desc">Token refresh — runs automatically before each daily sync</div>
+          </div>
+        </div>
+        <div class="endpoint-item">
+          <span class="method get">GET</span>
+          <div>
+            <div class="endpoint-path">/v1/user/profile/basic</div>
+            <div class="endpoint-desc">Verify token validity and fetch linked user profile on connect</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ABOUT TAQA -->
+<section id="about" style="background: var(--dark2);">
+  <div class="container">
+    <div class="about-grid">
+      <div>
+        <div class="section-label">About Taqa Fitness</div>
+        <h2>An AI fitness platform built around wearable intelligence</h2>
+        <p style="color:var(--muted); margin: 20px 0; line-height:1.7;">
+          Taqa Fitness is an AI-powered fitness and coaching platform. For users who connect WHOOP, it becomes the data source for recovery, strain, and sleep — giving them a richer, more accurate experience.
+        </p>
+        <a href="https://www.taqafitness.com/about" target="_blank" rel="noopener" class="btn-primary" style="display:inline-flex;align-items:center;gap:8px;margin-top:8px;">
+          Learn more about Taqa
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+
+      <div class="metrics-box">
+        <div class="metric-item">
+          <div class="metric-val">3</div>
+          <div class="metric-lbl">Wearable providers supported</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-val">20+</div>
+          <div class="metric-lbl">WHOOP data fields stored per user per day</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-val">7D</div>
+          <div class="metric-lbl">Rolling trends shown in-app</div>
+        </div>
+        <div class="metric-item">
+          <div class="metric-val">100%</div>
+          <div class="metric-lbl">User-consented OAuth — revocable anytime</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <div class="section-label">Get in Touch</div>
+    <h2>Interested in what we're building?</h2>
+    <p>
+      We'd love to connect with the WHOOP team to talk about our integration
+      and how we can grow together.
+    </p>
+    <div class="hero-cta" style="justify-content:center;">
+      <a href="mailto:tech@taqafitness.com" class="btn-primary">Contact Taqa Team</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div>© 2026 Taqa Fitness. WHOOP is a trademark of WHOOP, Inc. Taqa Fitness is not affiliated with or endorsed by WHOOP.</div>
+  <div style="display:flex;gap:20px;">
+    <a href="mailto:tech@taqafitness.com">tech@taqafitness.com</a>
+  </div>
+</footer>
+
+</body>
+</html>
